@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: auth-service
+  mongodb:
+    uri: mongodb://admin:secretpassword@localhost:27017/xNotes_auth?authSource=admin
+
+server:
+  port: 8081 # Separate port from your document-service (8080)
+
+springdoc:
+  api-docs:
+    path: /api-docs       # The raw JSON endpoint metadata path
+  swagger-ui:
+    path: /swagger-ui.html # The browser web-address destination
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

@@ -1,0 +1,61 @@
+services:
+  # 1. Central Registry Hub
+  discovery-service:
+    build: ./discovery-service
+    container_name: xNotes-discovery
+    ports:
+      - "127.0.0.1:8761:8761"
+    networks:
+      - xnotes-network
+
+  mongodb:
+    image: mongo:latest
+    container_name: xNotes-mongodb
+    ports:
+      - "127.0.0.1:27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=secretpassword
+      - MONGO_INITDB_DATABASE=xNotes
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - xnotes-network
+
+  # 3. Identity and Encryption Engine
+  auth-service:
+    build: ./auth-service
+    container_name: xNotes-auth
+    ports:
+      - "127.0.0.1:8081:8081"
+    environment:
+      - SPRING_MONGODB_URI=mongodb://admin:secretpassword@mongodb:27017/xNotes_auth?authSource=admin
+      - EUREKA_CLIENT_SERVICE-URL_DEFAULTZONE=http://discovery-service:8761/eureka/
+    depends_on:
+      - discovery-service
+      - mongodb
+    networks:
+      - xnotes-network
+
+  # 4. Content Operations Engine
+  document-service:
+    build: ./document-service
+    container_name: xNotes-document
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      - SPRING_MONGODB_URI=mongodb://admin:secretpassword@mongodb:27017/xNotes?authSource=admin
+      - EUREKA_CLIENT_SERVICE-URL_DEFAULTZONE=http://discovery-service:8761/eureka/
+    depends_on:
+      - discovery-service
+      - mongodb
+    networks:
+      - xnotes-network
+
+volumes:
+  mongo-data:
+    driver: local
+
+networks:
+  xnotes-network:
+    driver: bridge
