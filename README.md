@@ -1,6 +1,6 @@
-# xNotes: Distributed Online Document Editor
+# xNotes: AI-Powered Career Journal and Tailored Resume Generator
 
-xNotes is a distributed, real-time collaborative document editing platform built using a microservices architecture. The project demonstrates production-grade Java development practices, utilizing the Spring ecosystem, Spring Cloud, WebSockets, and Angular. It is designed to be highly scalable, decoupled, and maintainable.
+xNotes is a personal career tracking dashboard and AI-driven resume generator built using a microservices architecture. It allows professionals to log daily tasks, career achievements, and professional "small wins." When applying for new positions, an integrated AI service parses this log history against a target job description to generate a highly tailored, optimized resume.
 
 ---
 
@@ -32,8 +32,8 @@ The application is decomposed into isolated, single-responsibility microservices
                       │ (Service Discovery via Netflix Eureka)        │
                       ▼                       ▼                       ▼
            ┌────────────────────┐  ┌────────────────────┐  ┌────────────────────┐
-           │ Auth-User Service  │  │  Document Service  │  │  AI Engine (Future)│
-           │  (Stateless JWT)   │  │ (WebSockets & CRUD)│  │    (Spring AI)     │
+           │ Auth-User Service  │  │  Document Service  │  │  AI Resume Engine  │
+           │  (Stateless JWT)   │  │ (CRUD & Task Logs) │  │    (Spring AI)     │
            └──────────┬─────────┘  └──────────┬─────────┘  └────────────────────┘
                       │                       │
                       └───────────┬───────────┘
@@ -45,11 +45,12 @@ The application is decomposed into isolated, single-responsibility microservices
 
 ### Components
 
-1. **Angular Client:** A modern Single Page Application (SPA) utilizing reactive state management and WebSocket clients to support collaborative typing.
+1. **Angular Client:** A modular Single Page Application where users write journal entries, manage log logs, import target job descriptions, and view generated resumes.
 2. **Spring Cloud Gateway:** Serves as the single entry point. Responsible for cross-cutting concerns, including global CORS configuration, path-based routing, and stateless authentication check filters.
 3. **Netflix Eureka Discovery Server:** Facilitates service registration and dynamic discovery, enabling decoupled communication and horizontal scaling of downstream microservices.
 4. **Auth-User Service:** Manages user identity, credentials, role assignments, secure BCrypt password hashing, and stateless JWT issuance.
-5. **Document Service:** Manages text document metadata and contents. Uses WebSockets (STOMP/SockJS) to broadcast live document changes to active editors.
+5. **Document Service:** Manages text documents, career logs, and achievements. Supports real-time text updates via WebSockets (STOMP/SockJS) as a secondary collaboration feature.
+6. **AI Resume Engine (Future / Spring AI):** The core intelligence service. Uses LLMs via Spring AI to parse historical task logs and achievements, synthesize them, and construct custom resumes tailored to specific job postings.
 
 ---
 
@@ -82,26 +83,17 @@ The application is decomposed into isolated, single-responsibility microservices
 * [ ] **2.2 Design Identity Core Domain:** Complete JWT generation, validation utility, and login endpoints.
 * [ ] **2.3 Integrate Gateway Identity Guard:** Global filter in the API Gateway to validate Bearer JWTs and forward user headers downstream.
 
-### Phase 3: Core Document Service (CRUD & Low-Latency Sync)
-* [x] **3.1 Optimize Database Aggregates:** Implement document schemas in MongoDB (`xNotes`). Limit nested edit history to remain below MongoDB's 16MB document boundary.
-* [ ] **3.2 Expose Document CRUD Interfaces:** Expose RESTful endpoints for document creation, retrieval, updates, and deletion.
-* [ ] **3.3 Implement WebSockets Connection Layer:** Spring WebSockets with STOMP/SockJS to synchronize edits in real time.
+### Phase 3: Core Document & Achievement Service
+* [x] **3.1 Optimize Database Aggregates:** Implement document schemas in MongoDB (`xNotes`) to store journal entries, wins, and daily tasks.
+* [ ] **3.2 Expose Document CRUD Interfaces:** Expose RESTful endpoints for creating, retrieving, updating, and deleting career logs.
+* [ ] **3.3 Implement WebSockets Connection Layer:** Spring WebSockets with STOMP/SockJS to sync dashboard updates in real time (collaborative sharing as a side goal).
 
 ### Phase 4: Frontend Application Architecture (Angular)
 * [ ] **4.1 Construct Modular SPA Subsystems:** Setup lazy-loaded features (`AuthModule`, `DashboardModule`, `EditorModule`) and route authorization guards.
 * [ ] **4.2 Build Reactive HTTP Services:** Enforce centralized data providers talking to the Gateway.
-* [ ] **4.3 Integrate STOMP Client Wrappers:** Implement WebSocket client-side event loops to handle synchronized cursor positions and document updates.
+* [ ] **4.3 Integrate STOMP Client Wrappers:** Implement WebSocket client-side event loops to handle synchronized achievements and document states.
 
-### Phase 5: Verification & Production Target Adaptation
-* [ ] **5.1 Author Test Suites:** Develop JUnit 5 unit and integration tests using `@DataMongoTest` with embedded in-memory MongoDB databases.
-* [ ] **5.2 Environment Profile Realignment:** Setup dev/prod Spring profiles (`application-dev.yml`, `application-prod.yml`) and MongoDB Atlas cluster properties.
-
----
-
-## Future System Extensibility (AI Module)
-
-The architecture is designed to scale horizontally by integrating additional services without altering the pre-existing codebase:
-
-1. **Standalone Deployment:** A separate `ai-intelligence-service` built with Spring AI can be introduced and registered dynamically with Eureka.
-2. **Gateway Registration:** Expose the AI features to the client by declaring routes in the Gateway (e.g., routing `/api/v1/ai/**` to the AI service).
-3. **Asynchronous Processing:** For long-running operations (like summarizations or style adjustments), the Document Service can publish messages to an AMQP broker (RabbitMQ/Kafka). The AI service can process requests asynchronously and write results back to the shared MongoDB cluster.
+### Phase 5: AI Resume Tailoring Service & Verification
+* [ ] **5.1 Integrate Spring AI:** Establish the standalone `ai-resume-service` connected to Eureka, utilizing LLMs to synthesize achievements against target resumes.
+* [ ] **5.2 Author Test Suites:** Develop JUnit 5 unit and integration tests using `@DataMongoTest` with embedded in-memory MongoDB databases.
+* [ ] **5.3 Environment Profile Realignment:** Setup dev/prod Spring profiles (`application-dev.yml`, `application-prod.yml`) and MongoDB Atlas cluster properties.

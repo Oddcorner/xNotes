@@ -1,11 +1,11 @@
 # Domain Context: xNotes
 
-This document serves as the single source of truth for the ubiquitous language, domain concepts, and system architecture of the xNotes collaborative document editor.
+This document serves as the single source of truth for the ubiquitous language, domain concepts, and system architecture of the xNotes AI-powered career tracking and resume tailoring system.
 
 ---
 
 ## 1. System Vision
-xNotes is a real-time collaborative document platform. Users can create rich-text documents, invite collaborators, and edit text simultaneously in their browsers with low-latency updates.
+xNotes is an achievement journal and AI resume compiler. Users document their daily tasks, professional wins, and project metrics. When applying for a new job, the system leverages AI to cross-reference this log history with the targeted job description, compiling an optimized, highly tailored resume.
 
 ---
 
@@ -13,19 +13,21 @@ xNotes is a real-time collaborative document platform. Users can create rich-tex
 
 To ensure code classes and naming conventions are consistent, all modules must use this vocabulary:
 
-*   **User:** An authenticated account within the system. Users have roles (e.g. `ROLE_USER`, `ROLE_ADMIN`) and own/collaborate on documents.
-*   **TextDocument:** A distinct document workspace. It contains metadata (title, owner, modified timestamps) and content (raw text body).
-*   **Collaborator:** A user granted read or write permissions to a document owned by another user.
-*   **Session:** An active client websocket connection to a specific document.
-*   **Operation (Op):** A discrete character insertion, deletion, or modification payload pushed over WebSockets to synchronize client frames.
+*   **User:** An authenticated account representing a professional using the system.
+*   **JournalEntry / WorkLog:** A logged record of daily tasks, professional wins, project metrics, or performance feedback.
+*   **JobDescription:** The raw text block or URL representing the target job posting the user is applying to.
+*   **TailoredResume:** The generated, optimized resume draft constructed by the AI engine based on matching the User's logs to the target JobDescription requirements.
+*   **Session:** An active client websocket connection to a specific document dashboard.
+*   **Operation (Op):** A discrete cursor or text modification payload pushed over WebSockets to sync changes (collaboration is a side feature).
 
 ---
 
 ## 3. Microservices Topology
 
 *   **[discovery-service](file:///home/oddie/remotes/xNotes/discovery-service):** Eureka registry ensuring target services discover each other dynamically.
-*   **[auth-service](file:///home/oddie/remotes/xNotes/auth-service):** Identity manager handling JWT generation and registration.
-*   **[document-service](file:///home/oddie/remotes/xNotes/document-service):** Core engine handling document storage and websocket channels.
+*   **[auth-service](file:///home/oddie/remotes/xNotes/auth-service):** Identity manager handling JWT generation and user registrations.
+*   **[document-service](file:///home/oddie/remotes/xNotes/document-service):** Core engine storing daily journal entries and work logs.
+*   **ai-resume-service (planned):** Spring AI engine that parses WorkLogs against a JobDescription to generate tailored resumes.
 *   **gateway-service (planned):** Entry point routing traffic downstream and checking stateless JWT signatures.
 
 ---
@@ -34,8 +36,8 @@ To ensure code classes and naming conventions are consistent, all modules must u
 
 ### MongoDB 16MB Document Boundary
 *   **Constraint:** MongoDB limits single document sizes to 16MB.
-*   **Strategy:** Never store a growing, unbounded edit log (operational history) nested directly inside the `TextDocument` entity. Operations and history must be separated into a referenced collection (e.g. `revisions` or `operations`) with periodic snapshots of the main document text.
+*   **Strategy:** WorkLogs and JournalEntries are stored in collections linked by user ID rather than nesting all history inside a single User document.
 
 ### Stateless Edge Validation
 *   **Constraint:** Centralized authentication check in Gateway.
-*   **Strategy:** The Gateway intercepts JWT headers, decodes them, and passes username/role headers (e.g., `X-User-Id`, `X-User-Roles`) downstream to microservices. Individual services (like `document-service`) should trust these headers and remain completely stateless.
+*   **Strategy:** The Gateway intercepts JWT headers, decodes them, and passes user identifiers (e.g., `X-User-Id`, `X-User-Roles`) downstream to microservices. Individual services should trust these headers and remain completely stateless.
