@@ -1,31 +1,22 @@
-Here is the comprehensive, structured project plan formatted specifically for high scannability by humans and optimized as a context injection document for AI coding agents.
+# xNotes: Distributed Online Document Editor
+
+xNotes is a distributed, real-time collaborative document editing platform built using a microservices architecture. The project demonstrates production-grade Java development practices, utilizing the Spring ecosystem, Spring Cloud, WebSockets, and Angular. It is designed to be highly scalable, decoupled, and maintainable.
 
 ---
 
-# Project Blueprint: Distributed Online Document Editor
+## Technical Stack
 
-## 🚀 Architectural Context & Meta-Information
+* **Backend Framework:** Java 25 / Spring Boot 4.1.x & Spring Cloud 2025.x
+* **Frontend Framework:** Angular (Modular SPA)
+* **Primary Database:** MongoDB (Document-Oriented)
+* **Containerization:** Docker & Docker Compose
+* **Design Patterns:** SOLID Principles, Domain-Driven Design (DDD), Layered Clean Architecture (Controller -> Service -> Repository), Data Transfer Object (DTO) pattern.
 
-* 
-**Architecture Style:** Decoupled Microservices Architecture 
+---
 
+## System Architecture
 
-* 
-**Frontend Framework:** Angular (Modular SPA) 
-
-
-* 
-**Backend Framework:** Java 17+ / Spring Boot 3.x & Spring Cloud 
-
-
-* 
-**Primary Database:** MongoDB (Document-Oriented) 
-
-
-* 
-**Target Design Standards:** SOLID Principles, Domain-Driven Design (DDD) patterns, Layered Clean Architecture (`Controller -> Service -> Repository`).
-
-
+The application is decomposed into isolated, single-responsibility microservices that coordinate via service discovery and route through a central API gateway.
 
 ```
                                   ┌────────────────────────┐
@@ -50,204 +41,67 @@ Here is the comprehensive, structured project plan formatted specifically for hi
                      ┌────────────────────────┐
                      │ MongoDB (Local/Atlas)  │
                      └────────────────────────┘
-
 ```
 
+### Components
+
+1. **Angular Client:** A modern Single Page Application (SPA) utilizing reactive state management and WebSocket clients to support collaborative typing.
+2. **Spring Cloud Gateway:** Serves as the single entry point. Responsible for cross-cutting concerns, including global CORS configuration, path-based routing, and stateless authentication check filters.
+3. **Netflix Eureka Discovery Server:** Facilitates service registration and dynamic discovery, enabling decoupled communication and horizontal scaling of downstream microservices.
+4. **Auth-User Service:** Manages user identity, credentials, role assignments, secure BCrypt password hashing, and stateless JWT issuance.
+5. **Document Service:** Manages text document metadata and contents. Uses WebSockets (STOMP/SockJS) to broadcast live document changes to active editors.
+
 ---
 
-## 🛠️ Design Patterns & Code Standards to Enforce
+## Design Patterns and Code Standards
 
 ### 1. Data Isolation & DTO Pattern
+* **Standard:** Direct MongoDB `@Document` entities must never escape the Service layer to the Controller or Client.
+* **Reasoning:** Database entities are mapped to transient Data Transfer Objects (DTOs) before being serialized over REST or WebSockets. This prevents schema leaks and decouples client response structures from persistence schemas.
 
-* 
-**Rule:** Direct MongoDB `@Document` entities **must never** escape the Service layer to the Controller or Frontend.
-
-
-* 
-**Implementation:** Always map database entities to transient Data Transfer Objects (DTOs) before returning data via REST or WebSockets. This encapsulates the database schema and prevents internal structural leakage.
-
-
-
-### 2. Inversion of Control (IoC) & Testing
-
-* 
-**Rule:** Program to interfaces, not concrete implementations.
-
-
-* **Implementation:** Inject dependencies using Spring's `@Autowired` (constructor injection preferred). This isolates business components and facilitates robust unit testing via Mockito mocking frameworks.
-
-
+### 2. Inversion of Control (IoC) & Unit Testing
+* **Standard:** Design to interfaces and inject dependencies.
+* **Reasoning:** Dependencies are injected using Spring constructor injection. This enforces loose coupling, isolates business components, and simplifies unit testing with Mockito.
 
 ### 3. Strict Layered Separation
-
-* 
-**Controllers:** Handle only transport layer details (HTTP REST mappings, WebSocket frames, request validation).
-
-
-* 
-**Services:** Maintain the exclusive domain business logic (Single Responsibility Principle).
-
-
-* 
-**Repositories:** Manage strict data access abstraction interface layers.
-
-
+* **Controllers:** Handle transport layer protocols, HTTP/WebSocket mapping, request validation, and HTTP response mapping.
+* **Services:** Enforce business rules and manage core domain logic.
+* **Repositories:** Enforce data access abstractions.
 
 ---
 
-## 📈 Phased Step-by-Step Implementation Plan
+## Implementation Roadmap
 
-### Phase 1: Infrastructure & Service Discovery
+### Phase 1: Infrastructure and Service Discovery
+* [x] **1.1 Setup Discovery Engine (Eureka Server):** Standalone Spring Cloud Netflix Eureka service registry.
+* [ ] **1.2 Setup API Routing Gateway (Spring Cloud Gateway):** Dynamic routing configuration, global CORS policy, and downstream route filters.
+* [x] **1.3 Environment Externalization (Dockerization):** Containerization of services and MongoDB orchestration with Docker Compose.
 
-* 
-**Goal:** Establish the cloud/network backbone enabling dynamic inter-service communication.
-
-
-* [ ] **1.1 Setup Discovery Engine (`Eureka Server`)**
-* Initialize a standalone Spring Boot application using `Spring Cloud Netflix Eureka Server`.
-
-
-* Configure it to serve as a dynamic registry ("phonebook") for downstream service nodes.
-
-
-
-
-* [ ] **1.2 Setup API Routing Gateway (`Spring Cloud Gateway`)**
-* Instantiate a `Spring Cloud Gateway` app registered with the Eureka Server.
-
-
-* Implement centralized cross-cutting concerns: Global Cross-Origin Resource Sharing (**CORS**) policies and dynamic URL path-routing rules (e.g., routing `/api/v1/auth/` to Auth service).
-
-
-
-
-* [ ] **1.3 Environment Externalization (Dockerization)**
-* Compose a `docker-compose.yml` configuration orchestrating a local isolated instance of **MongoDB** for consistent local development and unit testing.
-
-
-
-
-
-### Phase 2: Authentication & Edge Security Infrastructure
-
-* 
-**Goal:** Secure downstream server topographies using stateless identity filters before exposing functional APIs.
-
-
-* [ ] **2.1 Connect Auth DB Context**
-* Bind the Authentication Spring Boot service to the active local MongoDB instance.
-
-
-
-
-* [ ] **2.2 Design Identity Core Domain**
-* Define user database entities, credential repositories, secure password encryption mechanisms (via BCrypt), and a utility layer generating/parsing secure JSON Web Tokens (JWT).
-
-
-
-
-* [ ] **2.3 Integrate Gateway Identity Guard**
-* Configure a custom global filter inside the API Gateway. The Gateway must intercept inbound requests to protected document routes, validate signatures against incoming bearer JWTs, and safely inject verified metadata headers before routing calls downstream.
-
-
-
-
+### Phase 2: Authentication and Edge Security Infrastructure
+* [x] **2.1 Connect Auth DB Context:** Bind Authentication service to MongoDB database `xNotes_auth`.
+* [ ] **2.2 Design Identity Core Domain:** Complete JWT generation, validation utility, and login endpoints.
+* [ ] **2.3 Integrate Gateway Identity Guard:** Global filter in the API Gateway to validate Bearer JWTs and forward user headers downstream.
 
 ### Phase 3: Core Document Service (CRUD & Low-Latency Sync)
-
-* 
-**Goal:** Engineer the persistent management engine and real-time collaboration pipeline for user files.
-
-
-* [ ] **3.1 Optimize Database Aggregates**
-* Design a non-relational document schema inside MongoDB.
-
-
-* 
-*Design Constraint:* Avoid nesting unbounded, fine-grained edit history tracking inside a singular primary document entity to safely respect MongoDB's rigid 16MB document boundary limit. Leverage referenced collection structures to record transaction snapshots.
-
-
-
-
-* [ ] **3.2 Expose Document CRUD Interfaces**
-* Implement standard, clean RESTful controller mapping routines allowing authenticated users to create, read, update, and delete files.
-
-
-
-
-* [ ] **3.3 Implement WebSockets Connection Layer**
-* Integrate native `Spring WebSockets` along with STOMP/SockJS protocols.
-
-
-* When any client modifies data, push highly optimized, low-overhead event frames to active channel subscribers to ensure low-latency frontend synchronizations.
-
-
-
-
+* [x] **3.1 Optimize Database Aggregates:** Implement document schemas in MongoDB (`xNotes`). Limit nested edit history to remain below MongoDB's 16MB document boundary.
+* [ ] **3.2 Expose Document CRUD Interfaces:** Expose RESTful endpoints for document creation, retrieval, updates, and deletion.
+* [ ] **3.3 Implement WebSockets Connection Layer:** Spring WebSockets with STOMP/SockJS to synchronize edits in real time.
 
 ### Phase 4: Frontend Application Architecture (Angular)
-
-* 
-**Goal:** Author a client application capable of driving real-time asynchronous streaming.
-
-
-* [ ] **4.1 Construct Modular SPA Subsystems**
-* Break the application down into decoupled lazy-loaded feature modules: `AuthModule`, `DashboardModule`, and `EditorModule`. Enforce `CanActivate` Route Guards to protect private frontend spaces from unauthenticated visitors.
-
-
-
-
-* [ ] **4.2 Build Reactive HTTP Services**
-* Implement centralized data providers designed to pipe data safely through the unified API Gateway proxy engine.
-
-
-
-
-* [ ] **4.3 Integrate STOMP Client Wrappers**
-* Embed client-side WebSocket handlers inside the text editor components to map incoming text stream variations into the UI lifecycle seamlessly.
-
-
-
-
+* [ ] **4.1 Construct Modular SPA Subsystems:** Setup lazy-loaded features (`AuthModule`, `DashboardModule`, `EditorModule`) and route authorization guards.
+* [ ] **4.2 Build Reactive HTTP Services:** Enforce centralized data providers talking to the Gateway.
+* [ ] **4.3 Integrate STOMP Client Wrappers:** Implement WebSocket client-side event loops to handle synchronized cursor positions and document updates.
 
 ### Phase 5: Verification & Production Target Adaptation
-
-* 
-**Goal:** Verify application runtime resilience and abstract system behavior from execution environments.
-
-
-* [ ] **5.1 Author Test Suites**
-* Structure automated backend validation suites relying on **JUnit 5** and **Mockito** frameworks to execute isolated testing blocks.
-
-
-* Maximize the use of Spring Data's `@DataMongoTest` alongside embedded in-memory database engines to safely confirm custom queries without muddying persistent state profiles.
-
-
-
-
-* [ ] **5.2 Environment Profile Realignment**
-* Create managed cloud spaces using a free-tier **MongoDB Atlas** database cluster.
-
-
-* Set up separate environment configurations via Spring Profiles (`application-dev.yml` vs `application-prod.yml`), enabling target environments to switch smoothly based on simple external environment flags.
-
-
-
-
+* [ ] **5.1 Author Test Suites:** Develop JUnit 5 unit and integration tests using `@DataMongoTest` with embedded in-memory MongoDB databases.
+* [ ] **5.2 Environment Profile Realignment:** Setup dev/prod Spring profiles (`application-dev.yml`, `application-prod.yml`) and MongoDB Atlas cluster properties.
 
 ---
 
-## 🔮 Future System Extensibility Vector (AI Module)
+## Future System Extensibility (AI Module)
 
-This plan scales without breaking because adding your planned AI Service requires **zero modifications** to the pre-existing system code:
+The architecture is designed to scale horizontally by integrating additional services without altering the pre-existing codebase:
 
-1. 
-**Standalone Deployment:** Spin up a separate `ai-intelligence-service` powered by **Spring AI** and register its presence with the active Eureka Server.
-
-
-2. 
-**Gateway Registrationing:** Open access to the module by declaring a simple route forward path (e.g., sending `/api/v1/ai/` queries to the AI node).
-
-
-3. 
-**Decoupled Inter-Service Messaging:** For slow or heavy compute loops (like file summarizations), the Document service will drop an explicit processing request onto a lightweight queue broker (like RabbitMQ or Kafka). The AI engine can digest the data at its own pace and save the completed results straight to MongoDB.
+1. **Standalone Deployment:** A separate `ai-intelligence-service` built with Spring AI can be introduced and registered dynamically with Eureka.
+2. **Gateway Registration:** Expose the AI features to the client by declaring routes in the Gateway (e.g., routing `/api/v1/ai/**` to the AI service).
+3. **Asynchronous Processing:** For long-running operations (like summarizations or style adjustments), the Document Service can publish messages to an AMQP broker (RabbitMQ/Kafka). The AI service can process requests asynchronously and write results back to the shared MongoDB cluster.
